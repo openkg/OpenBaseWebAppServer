@@ -1,0 +1,39 @@
+Manifest-Version: 1.0
+Class-Path: spring-jcl-5.0.8.RELEASE.jar spring-plugin-core-1.2.0.RELE
+ ASE.jar collection-0.7.jar jena-tdb2-3.8.0.jar guava-20.0.jar jena-sh
+ aded-guava-3.8.0.jar jena-dboe-base-3.8.0.jar hibernate-validator-6.0
+ .11.Final.jar springfox-swagger2-2.9.2.jar httpclient-4.5.6.jar swagg
+ er-annotations-1.5.20.jar log4j-to-slf4j-2.10.0.jar springfox-spring-
+ web-2.9.2.jar commons-lang3-3.7.jar mysql-connector-java-8.0.11.jar s
+ pring-jdbc-5.0.8.RELEASE.jar mybatis-3.4.6.jar classmate-1.3.4.jar ja
+ ckson-core-2.9.6.jar httpclient-cache-4.5.6.jar commons-cli-1.4.jar s
+ pring-boot-starter-tomcat-2.0.4.RELEASE.jar validation-api-2.0.1.Fina
+ l.jar tomcat-embed-el-8.5.32.jar jackson-datatype-jsr310-2.9.6.jar sp
+ ring-aop-5.0.8.RELEASE.jar spring-boot-autoconfigure-2.0.4.RELEASE.ja
+ r spring-boot-starter-jdbc-2.0.4.RELEASE.jar libthrift-0.10.0.jar jso
+ nld-java-0.12.0.jar spring-boot-starter-json-2.0.4.RELEASE.jar common
+ s-compress-1.17.jar spring-webmvc-5.0.8.RELEASE.jar slf4j-api-1.7.25.
+ jar mybatis-spring-1.3.2.jar protobuf-java-2.6.0.jar springfox-swagge
+ r-common-2.9.2.jar spring-plugin-metadata-1.2.0.RELEASE.jar jena-dboe
+ -index-3.8.0.jar spring-boot-starter-2.0.4.RELEASE.jar springfox-sche
+ ma-2.9.2.jar mybatis-spring-boot-autoconfigure-1.3.2.jar jena-base-3.
+ 8.0.jar spring-core-5.0.8.RELEASE.jar commons-io-2.6.jar byte-buddy-1
+ .7.11.jar HikariCP-2.7.9.jar jackson-datatype-jdk8-2.9.6.jar snakeyam
+ l-1.19.jar jena-dboe-transaction-3.8.0.jar springfox-core-2.9.2.jar s
+ pring-beans-5.0.8.RELEASE.jar jackson-module-parameter-names-2.9.6.ja
+ r jcl-over-slf4j-1.7.25.jar jena-iri-3.8.0.jar jena-rdfconnection-3.8
+ .0.jar jackson-databind-2.9.6.jar jena-core-3.8.0.jar spring-boot-2.0
+ .4.RELEASE.jar logback-core-1.2.3.jar commons-codec-1.11.jar springfo
+ x-swagger-ui-2.9.2.jar spring-tx-5.0.8.RELEASE.jar swagger-models-1.5
+ .20.jar springfox-spi-2.9.2.jar jul-to-slf4j-1.7.25.jar commons-csv-1
+ .5.jar javax.annotation-api-1.3.2.jar spring-boot-starter-logging-2.0
+ .4.RELEASE.jar tomcat-embed-core-8.5.32.jar jboss-logging-3.3.2.Final
+ .jar tomcat-embed-websocket-8.5.32.jar jena-tdb-3.8.0.jar jena-dboe-t
+ rans-data-3.8.0.jar jena-arq-3.8.0.jar spring-web-5.0.8.RELEASE.jar l
+ ombok-1.16.22.jar mybatis-typehandlers-jsr310-1.0.2.jar httpcore-4.4.
+ 10.jar jackson-annotations-2.9.0.jar mybatis-spring-boot-starter-1.3.
+ 2.jar spring-expression-5.0.8.RELEASE.jar log4j-api-2.10.0.jar spring
+ -boot-starter-web-2.0.4.RELEASE.jar logback-classic-1.2.3.jar mapstru
+ ct-1.2.0.Final.jar spring-context-5.0.8.RELEASE.jar
+Main-Class: com.openkg.openbase.CoreApplication
+
