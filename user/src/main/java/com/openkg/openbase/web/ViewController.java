@@ -8,6 +8,7 @@ import com.openkg.openbase.model.Page;
 import com.openkg.openbase.model.PaginationResult;
 import com.openkg.openbase.model.Res;
 import com.openkg.openbase.model.Token;
+import com.openkg.openbase.service.HttpClientService;
 import com.openkg.openbase.service.ReviewService;
 import com.openkg.openbase.service.ViewService;
 import io.swagger.annotations.Api;
@@ -16,9 +17,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.MediaType;
 import org.springframework.web.bind.annotation.*;
 
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 
 @Api(description = "openbase review api", tags = "review api",
@@ -27,6 +26,13 @@ import java.util.Map;
 @RequestMapping(value = "viewKG")
 @CrossOrigin
 public class ViewController {
+    private HttpClientService httpClient;
+
+    @Autowired
+    public void setHttpClient(HttpClientService httpClient) {
+        this.httpClient = httpClient;
+    }
+
     /**
      * 图谱浏览 --> 图谱展示
      */
@@ -107,6 +113,31 @@ public class ViewController {
         Page page = new Page(pageSize, pageIndex, 0);
         try {
             data = ViewService.getEntityByName(entityName, page, source);
+
+            // http://113.31.104.113:8080/api/v1/
+            // 在这里插入 post /api/v1/honor-point接口: user_id
+            // 可以用 get /api/v1/honor-point接口来验证: user_id, data_id
+            //获取用户id
+            Token tokenvalue = Token.fromCache(token);
+            String user_id = tokenvalue.getUser_id();
+            System.out.println("getEntityByName: user_id = " + user_id);
+            List<Map> arraylist = (List)(data.get("RetrievedEntities"));
+            String data_id = (String) ((arraylist.get(0)).get("@id"));
+            System.out.println("data_id = " + data_id);
+            Map<String, Object> parameter = new HashMap<String, Object>();
+            // post请求生成荣誉值
+            parameter.put("userId", user_id);
+            parameter.put("amount", 10);
+            parameter.put("dataId", data_id);
+            parameter.put("version", "");
+            HttpClientService.HttpResponse response_http = httpClient.doPost("http://113.31.104.113:8080/api/v1/honor-point", parameter);
+            System.out.println("post response = " + response_http.getBody());
+            // get请求得到荣誉值
+            String get_url = "http://113.31.104.113:8080/api/v1/honor-point?userId=" + user_id;
+            String response_str = httpClient.doGet(get_url);
+            System.out.println("get response = " + response_str);
+
+
         } catch (Exception e) {
             res.setCode(Msg.EXCEPTION.getCode());
             res.setMsg(Msg.EXCEPTION.getMsg());
