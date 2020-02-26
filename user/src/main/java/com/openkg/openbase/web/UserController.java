@@ -1,12 +1,11 @@
 package com.openkg.openbase.web;
 
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 import com.google.common.base.Strings;
 import com.openkg.openbase.common.*;
 import com.openkg.openbase.model.*;
+import com.openkg.openbase.service.HttpClientService;
 import com.tencentcloudapi.captcha.v20190722.CaptchaClient;
 import com.tencentcloudapi.captcha.v20190722.models.DescribeCaptchaResultRequest;
 import com.tencentcloudapi.captcha.v20190722.models.DescribeCaptchaResultResponse;
@@ -37,13 +36,13 @@ import com.github.qcloudsms.httpclient.HTTPException;
 import org.json.JSONException;
 
 import java.io.IOException;
-import java.util.Date;
 //------------------------------------------------------------------------------
 
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
 
 import javax.servlet.http.HttpServletRequest;
+import javax.swing.text.html.parser.Entity;
 
 @Api(description = "openbase user api", tags = "user api",
         consumes = MediaType.APPLICATION_JSON_VALUE, produces = MediaType.APPLICATION_JSON_UTF8_VALUE)
@@ -69,10 +68,16 @@ public class UserController {
 
     //-----------------------------------------------------------------------------------------
     private UserService userService;
+    private HttpClientService httpClient;
 
     @Autowired
     public void setUserService(UserService userService) {
         this.userService = userService;
+    }
+
+    @Autowired
+    public void setHttpClient(HttpClientService httpClient) {
+        this.httpClient = httpClient;
     }
 
     /**
@@ -124,6 +129,21 @@ public class UserController {
             if (token != null) {
                 response.setToken(token);
             }
+
+            // 将user_id发给ontology，用户上链
+            user = userService.getUserByPhoneNumber(phone);
+            String user_id = user.getUser_id();
+            System.out.println("fullname: " + user.getUser_fullname() + ", uuid: " + user_id);
+            String url = "http://113.31.104.113:8080/api/v1/ont-id/user";
+            Map<String, Object> parameter = new HashMap<String, Object>();
+            parameter.put("userId", user_id);
+            try {
+                Object result =  httpClient.doPost(url, parameter);
+            }
+            catch (Exception e) {
+                System.out.println("出现异常啦！");
+            }
+
             return response;
         } else {
             //System.out.println("验证码验证失败");
@@ -475,40 +495,40 @@ public class UserController {
             return response;
         }
 
-        try{
-            Credential cred = new Credential("secretid", "secretkey");
-
-            HttpProfile httpProfile = new HttpProfile();
-            httpProfile.setEndpoint("captcha.tencentcloudapi.com");
-
-            ClientProfile clientProfile = new ClientProfile();
-            clientProfile.setHttpProfile(httpProfile);
-
-            CaptchaClient client = new CaptchaClient(cred, "", clientProfile);
-            CaptchaParams captchaParams= new CaptchaParams();
-            captchaParams.setUserIp(remoteAddress);
-            captchaParams.setTicket(smsCodeRequest.getTicket());
-            captchaParams.setRandomStr(smsCodeRequest.getRandom_string());
-            String params = Singleton.GSON.toJson(captchaParams);
-            DescribeCaptchaResultRequest req = DescribeCaptchaResultRequest.fromJsonString(params, DescribeCaptchaResultRequest.class);
-
-            DescribeCaptchaResultResponse resp = client.DescribeCaptchaResult(req);
-
-            if(resp.getCaptchaCode() == 1){
-                // okey
-                // nothing to do, just go through this block.
-            }else {
-                // wrong
-                response.setCode(Msg.FAILED.getCode());
-                response.setMsg(resp.getCaptchaMsg());
-                return response;
-            }
-        }catch (TencentCloudSDKException e){
-            response.setCode(Msg.FAILED.getCode());
-            response.setMsg(e.toString());
-            e.printStackTrace();
-            return response;
-        }
+//        try{
+//            Credential cred = new Credential("secretid", "secretkey");
+//
+//            HttpProfile httpProfile = new HttpProfile();
+//            httpProfile.setEndpoint("captcha.tencentcloudapi.com");
+//
+//            ClientProfile clientProfile = new ClientProfile();
+//            clientProfile.setHttpProfile(httpProfile);
+//
+//            CaptchaClient client = new CaptchaClient(cred, "", clientProfile);
+//            CaptchaParams captchaParams= new CaptchaParams();
+//            captchaParams.setUserIp(remoteAddress);
+//            captchaParams.setTicket(smsCodeRequest.getTicket());
+//            captchaParams.setRandomStr(smsCodeRequest.getRandom_string());
+//            String params = Singleton.GSON.toJson(captchaParams);
+//            DescribeCaptchaResultRequest req = DescribeCaptchaResultRequest.fromJsonString(params, DescribeCaptchaResultRequest.class);
+//
+//            DescribeCaptchaResultResponse resp = client.DescribeCaptchaResult(req);
+//
+//            if(resp.getCaptchaCode() == 1){
+//                // okey
+//                // nothing to do, just go through this block.
+//            }else {
+//                // wrong
+//                response.setCode(Msg.FAILED.getCode());
+//                response.setMsg(resp.getCaptchaMsg());
+//                return response;
+//            }
+//        }catch (TencentCloudSDKException e){
+//            response.setCode(Msg.FAILED.getCode());
+//            response.setMsg(e.toString());
+//            e.printStackTrace();
+//            return response;
+//        }
 
 
         try {
