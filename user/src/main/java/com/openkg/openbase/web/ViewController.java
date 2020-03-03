@@ -9,6 +9,7 @@ import com.openkg.openbase.model.PaginationResult;
 import com.openkg.openbase.model.Res;
 import com.openkg.openbase.model.Token;
 import com.openkg.openbase.service.HttpClientService;
+import com.openkg.openbase.service.MongoService;
 import com.openkg.openbase.service.ReviewService;
 import com.openkg.openbase.service.ViewService;
 import io.swagger.annotations.Api;
@@ -27,11 +28,15 @@ import java.util.*;
 @CrossOrigin
 public class ViewController {
     private HttpClientService httpClient;
+    private MongoService mongoService;
 
     @Autowired
     public void setHttpClient(HttpClientService httpClient) {
         this.httpClient = httpClient;
     }
+
+    @Autowired
+    public void setMongoService(MongoService mongoService){this.mongoService = mongoService;}
 
     /**
      * 图谱浏览 --> 图谱展示
@@ -119,26 +124,37 @@ public class ViewController {
             // 可以用 get /api/v1/honor-point接口来验证: user_id, data_id
             //获取用户id
             Token tokenvalue = Token.fromCache(token);
-            String user_id = tokenvalue.getUser_id();
-            System.out.println("getEntityByName: user_id = " + user_id);
-            List<Map> arraylist = (List)(data.get("RetrievedEntities"));
-            String data_id = (String) ((arraylist.get(0)).get("@id"));
-            System.out.println("data_id = " + data_id);
-            Map<String, Object> parameter = new HashMap<String, Object>();
-            // post请求生成荣誉值
-            parameter.put("userId", user_id);
-            parameter.put("amount", 10);
-            parameter.put("dataId", data_id);
-            parameter.put("version", "");
-            HttpClientService.HttpResponse response_http = httpClient.doPost("http://113.31.104.113:8080/api/v1/honor-point", parameter);
-            System.out.println("post response = " + response_http.getBody());
-            // get请求得到荣誉值
-            String get_url = "http://113.31.104.113:8080/api/v1/honor-point?userId=" + user_id;
-            String response_str = httpClient.doGet(get_url);
-            System.out.println("get response = " + response_str);
+            if(tokenvalue != null){
+                // 需要写一个查询old_version的接口
+                System.out.println();
+                String user_id = tokenvalue.getUser_id();
+                List<Map> arraylist = (List)(data.get("RetrievedEntities"));
+                String data_id = (String) ((arraylist.get(0)).get("@id"));
+                Map<String, Object> parameter = new HashMap<String, Object>();
+                int data_size = (arraylist.get(0)).size();
+                String old_version = mongoService.getEntityHistoryByID(data_id, "update");
 
+                // 这里的时间戳需要取做一次查询
+                System.out.println("getEntityByName: user_id = " + user_id);
+                System.out.println("data_id = " + data_id);
+                System.out.println("时间戳: " + old_version);
+                System.out.println("data_size = " + data_size);
+
+                // post请求生成荣誉值
+                parameter.put("userId", user_id);
+                parameter.put("amount", data_size);
+                parameter.put("dataId", data_id);
+                parameter.put("version", "");
+//                HttpClientService.HttpResponse response_http = httpClient.doPost("http://113.31.104.113:8080/api/v1/honor-point", parameter);
+//                System.out.println("post response = " + response_http.getBody());
+                // get请求得到荣誉值
+                String get_url = "http://113.31.104.113:8080/api/v1/honor-point?userId=" + user_id;
+//                String response_str = httpClient.doGet(get_url);
+//                System.out.println("get response = " + response_str);
+            }
 
         } catch (Exception e) {
+            e.printStackTrace();
             res.setCode(Msg.EXCEPTION.getCode());
             res.setMsg(Msg.EXCEPTION.getMsg());
             res.setToken(token);

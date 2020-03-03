@@ -72,7 +72,7 @@ public class EditService {
         return cnSchemaPropertyNameMap;
     }
 
-    public boolean updateEntity(String user_id, HashMap<String, String> entity_dict){
+    public boolean updateEntity(String user_id, HashMap<String, String> entity_dict, String timeStamp){
         if(null != entity_dict.get("@id") && !entity_dict.get("@id").isEmpty() && null != entity_dict.get("@name") && !entity_dict.get("@name").isEmpty()){
 
             Document newDocument = getEntityByID(entity_dict.get("@id"));
@@ -119,7 +119,7 @@ public class EditService {
             // add new history entry for this edit by daizhen. first
             Document newEditHistoryDocument = new Document();
             newEditHistoryDocument.put("editorID",user_id);
-            String timeStamp = new SimpleDateFormat("yyyy年MM月dd日HH小时mm分ss秒").format(new Date());
+//            String timeStamp = new SimpleDateFormat("yyyy年MM月dd日HH小时mm分ss秒").format(new Date());
             newEditHistoryDocument.put("editTimeStamp", timeStamp);
             newEditHistoryDocument.put("updatedVersion", newDocument);
             newEditHistoryDocument.put("originalVersion", getEntityByID(entity_dict.get("@id")));

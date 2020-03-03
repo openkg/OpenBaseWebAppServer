@@ -7,6 +7,7 @@ import org.apache.http.client.config.RequestConfig;
 import org.apache.http.client.methods.CloseableHttpResponse;
 import org.apache.http.client.methods.HttpGet;
 import org.apache.http.client.methods.HttpPost;
+import org.apache.http.client.methods.HttpPut;
 import org.apache.http.client.utils.URIBuilder;
 import org.apache.http.entity.ContentType;
 import org.apache.http.entity.StringEntity;
@@ -94,6 +95,23 @@ public class HttpClientService {
         }
 
         CloseableHttpResponse response = this.closeableHttpClient.execute(httpPost);
+        // 对请求的响应进行简单的包装成自定义的类型
+        return new HttpResponse(response.getStatusLine().getStatusCode(), EntityUtils.toString(
+                response.getEntity(), DEFAULT_CHARSET));
+    }
+
+    public HttpResponse doPut(String url, Map<String, Object> requestParameter) throws Exception {
+        HttpPut httpPut = new HttpPut(url);
+        httpPut.setConfig(config);
+        httpPut.addHeader(HttpHeaders.CONTENT_TYPE, ContentType.APPLICATION_JSON.getMimeType());
+
+        if (requestParameter != null) {
+            String requestBody = JSONObject.toJSONString(requestParameter);
+            StringEntity postEntity = new StringEntity(requestBody, "UTF-8");
+            httpPut.setEntity(postEntity);
+        }
+
+        CloseableHttpResponse response = this.closeableHttpClient.execute(httpPut);
         // 对请求的响应进行简单的包装成自定义的类型
         return new HttpResponse(response.getStatusLine().getStatusCode(), EntityUtils.toString(
                 response.getEntity(), DEFAULT_CHARSET));
