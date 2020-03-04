@@ -16,9 +16,10 @@ import java.sql.Timestamp;
 public class MongoService {
     private static final String ENTITYCOLLECTION = "entity";
     private static final String EditHistoryCOLLECTION = "entity_edit_history";
+    private static final String DatasetInfoCOLLECTION = "dataset_info";
     private static final MongoCollection<Document> entityCollection = Singleton.mongoDBUtil.getdb().getCollection(ENTITYCOLLECTION);
     private static final MongoCollection<Document> editHistoryCollection = Singleton.mongoDBUtil.getdb().getCollection(EditHistoryCOLLECTION);
-
+    private static final MongoCollection<Document> datasetNameCollection = Singleton.mongoDBUtil.getdb().getCollection(DatasetInfoCOLLECTION);
 
     public String getEntityHistoryByID(String atID, String edit_type){
         Document matchDocument = new Document();
@@ -94,6 +95,19 @@ public class MongoService {
 //            int size =  resultDocument.get(0).size();
             String latest_timestamp= (String) resultDocument.get(0).get("editTimeStamp");
             return latest_timestamp;
+        }
+        return "";
+    }
+
+    public String getDatasetIdByName(String name){
+        Document matchDocument = new Document();
+        matchDocument.put("name", name);
+        MongoCursor<Document> mongo_cursor = datasetNameCollection.find(matchDocument).iterator();
+        Document resultDocument;
+        if (mongo_cursor.hasNext()){
+            resultDocument = mongo_cursor.next();
+            String datasetId = (String)resultDocument.get("id");
+            return datasetId;
         }
         return "";
     }

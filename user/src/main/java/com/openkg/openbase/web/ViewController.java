@@ -216,5 +216,50 @@ public class ViewController {
         return res;
     }
 
+    /**
+     * 图谱下载
+     */
+    @ApiOperation(value = "download")
+    @RequestMapping(value = "download", method = RequestMethod.GET)
+    public Res getDownloadInfo(@RequestParam("token") String token, @RequestParam("name") String name){
+        Res res = new Res();
+        //拿到name知道调用mongodb接口，找到dataset_info对应的collection，然后找出id号
+        System.out.println();
+        //注意存在空用户
+        Token tokenvalue = Token.fromCache(token);
+        if(tokenvalue != null){
+            String user_id = tokenvalue.getUser_id();
+            String datasetID = mongoService.getDatasetIdByName(name);
+            int honor_number = 0;
 
+            System.out.println("getDownloadInfo: user_id " + user_id);
+            System.out.println("dataset: " + name);
+            System.out.println("dataset_id: " + datasetID);
+            System.out.println("下载数据集产生荣誉值: " + honor_number);
+
+            try {
+                //post接口 /api/v1/data/download/
+                //参数 {
+                //  "amount": 0, 荣誉值的数量
+                //  "dataId": "string",
+                //  "userId": "string"
+                //}
+                Map<String, Object> parameter = new HashMap<String, Object>();
+                parameter.put("userId", user_id);
+                parameter.put("dataId", datasetID);
+                parameter.put("amount", honor_number);
+                HttpClientService.HttpResponse response_http = httpClient.doPost("http://113.31.104.113:8080/api/v1/data/download/", parameter);
+                System.out.println("post response = " + response_http.getBody());
+            }
+            catch (Exception e){
+                e.printStackTrace();
+            }
+
+        }
+        else{
+            System.out.println("没有登录，是空用户下载！");
+        }
+
+        return res;
+    }
 }

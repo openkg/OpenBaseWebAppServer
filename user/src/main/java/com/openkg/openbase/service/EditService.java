@@ -157,7 +157,7 @@ public class EditService {
         return false;
     }
 
-    public boolean createEntity(String user_id, HashMap<String, String> entity_dict){
+    public boolean createEntity(String user_id, HashMap<String, String> entity_dict, String generatedUUID){
 
         if(null != entity_dict.get("@name") && !entity_dict.get("@name").isEmpty()){
 
@@ -184,7 +184,7 @@ public class EditService {
                     //newDocument.put(entry.getKey(), entry.getValue());
                 }
             }
-            String generatedUUID = UUID.randomUUID().toString().replace("-", "");
+//            String generatedUUID = UUID.randomUUID().toString().replace("-", "");
             entity_dict.put("@id", generatedUUID);
             newDocument.put("@id", generatedUUID);
 

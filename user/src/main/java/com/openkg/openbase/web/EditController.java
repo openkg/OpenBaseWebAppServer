@@ -16,10 +16,7 @@ import org.springframework.http.MediaType;
 import org.springframework.web.bind.annotation.*;
 
 import java.text.SimpleDateFormat;
-import java.util.Date;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 @Api(description = "openbase edit api", tags = "edit api",
         consumes = MediaType.APPLICATION_JSON_VALUE, produces = MediaType.APPLICATION_JSON_UTF8_VALUE)
@@ -86,10 +83,9 @@ public class EditController {
                 parameter.put("dataId", data_id);
                 parameter.put("newVersion", timeStamp);
                 parameter.put("oldVersion", old_version);
-                // 目前时间戳这个参数没法测试，只能空值
                 parameter.put("userId", user_id);
 //                HttpClientService.HttpResponse response_http = httpClient.doPut("http://113.31.104.113:8080/api/v1/ont-id/data", parameter);
-//                System.out.println("post response = " + response_http.getBody());
+//                System.out.println("put response = " + response_http.getBody());
                 // get请求得到荣誉值
 //                String get_url = "http://113.31.104.113:8080/api/v1/honor-point?userId=" + user_id;
 //                String response_str = httpClient.doGet(get_url);
@@ -124,12 +120,41 @@ public class EditController {
         if (res.getCode() != Msg.SUCCESS.getCode()) {
             return res;
         }
-        if (editService.createEntity(Token.fromCache(token).getUser_id(), data)) {
+        String generatedUUID = UUID.randomUUID().toString().replace("-", "");
+        if (editService.createEntity(Token.fromCache(token).getUser_id(), data, generatedUUID)) {
             res.setCode(Msg.SUCCESS.getCode());
             res.setMsg("新增结果,保存成功");
             res.setData(data);
             res.setToken(token);
 
+            Token tokenvalue = Token.fromCache(token);
+            String user_id = tokenvalue.getUser_id();
+            String data_id = generatedUUID;
+            int data_size = data.size();
+            String timeStamp = "";
+            String old_version = "";
+
+            try{
+                System.out.println();
+                System.out.println("submitCreateEntity: user_id = " + user_id);
+                System.out.println("data_id = " + data_id);
+                System.out.println("old version: " + "");
+                System.out.println("new version: " + "");
+                System.out.println("data_size = " + data_size);
+
+                Map<String, Object> parameter = new HashMap<String, Object>();
+                parameter.put("dataId", data_id);
+                parameter.put("newVersion", timeStamp);
+                parameter.put("oldVersion", old_version);
+                parameter.put("userId", user_id);
+
+                // post注册data_id
+//                HttpClientService.HttpResponse response_http = httpClient.doPost("http://113.31.104.113:8080/api/v1/ont-id/data", parameter);
+//                System.out.println("post response = " + response_http.getBody());
+            }
+            catch (Exception e){
+                e.printStackTrace();
+            }
 
 
         } else {
