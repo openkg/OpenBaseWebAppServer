@@ -19,8 +19,8 @@ import java.util.*;
 
 @Service
 public class EditService {
-
-    private static final String ENTITYCOLLECTION = "entity";
+    private static final String ENTITYCOLLECTION = "checked_entity";
+//    private static final String ENTITYCOLLECTION = "entity";
     private static final String EditHistoryCOLLECTION = "entity_edit_history";
     private static final MongoCollection<Document> entityCollection = Singleton.mongoDBUtil.getdb().getCollection(ENTITYCOLLECTION);
     private static final MongoCollection<Document> editHistoryCollection = Singleton.mongoDBUtil.getdb().getCollection(EditHistoryCOLLECTION);

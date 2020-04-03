@@ -1,12 +1,16 @@
 package com.openkg.openbase.service;
 
+import com.mongodb.client.MongoCollection;
+import com.mongodb.client.MongoCursor;
 import com.openkg.openbase.Manage.JobFactory;
 import com.openkg.openbase.Manage.ReviewFactory;
 import com.openkg.openbase.common.Singleton;
 import com.openkg.openbase.model.DataStream.Element;
 import com.openkg.openbase.model.JobBase;
+import com.openkg.openbase.model.Res;
 import com.openkg.openbase.model.Subject;
 import com.openkg.openbase.model.Triple;
+import org.bson.Document;
 import org.springframework.stereotype.Service;
 
 import java.text.SimpleDateFormat;
@@ -17,10 +21,14 @@ import java.util.*;
 public class CheckService {
 
     private static final SimpleDateFormat sdf=new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
-
+    private static final String CheckedEntityCOLLECTION = "checked_entity";
+    private static final String ENTITYCOLLECTION = "entity";
+    private static final MongoCollection<Document> checkedEntityCOLLECTION = Singleton.mongoDBUtil.getdb().getCollection(CheckedEntityCOLLECTION);
+    private static final MongoCollection<Document> entityCollection = Singleton.mongoDBUtil.getdb().getCollection(ENTITYCOLLECTION);
 
     //验收任务领取
     public Map getJobData(String user_id,String jobDomain) {
+        System.out.println("\t getJobData");
         //获取任务id
         JobBase jobBase = JobFactory.getCheckJob(user_id,jobDomain);
         if(jobBase == null){
@@ -74,6 +82,7 @@ public class CheckService {
 
     //验收任务保存
     public boolean saveTask(String user_id, String job_id, int currentPage, int reviewSpan, List<HashMap> data) {
+        System.out.println("\t saveTask");
         JobBase job = JobFactory.getJobByJobId(job_id);
         String type = job.getType().getName();
         List<JobBase.TaskRecord> whole_task_list = job.getRecordHistory();
@@ -152,11 +161,13 @@ public class CheckService {
     }
 
     //验收任务提交
-    public boolean commitTask(String user_id, String job_id, int currentPage, int reviewSpan, List<HashMap> data) {
+    public Res commitTask(String user_id, String job_id, int currentPage, int reviewSpan, List<HashMap> data) {
+        System.out.println("\t commitTask");
         JobBase job = JobFactory.getJobByJobId(job_id);
         String type = job.getType().getName();
         List<JobBase.TaskRecord> whole_task_list = job.getRecordHistory();
-        Boolean res = false;
+//        Boolean res = false;
+        Res res = new Res();
         switch (type){
             case "triple":
                 for(HashMap map:data){
@@ -165,7 +176,8 @@ public class CheckService {
                     for(Triple triple:subject.getTriples()){
                         //ReviewFactory.saveRelationHistory(new TripleHistory(user_id,job_id,triple.getTripleId(),triple.getReviewedRes()));
                         for(JobBase.TaskRecord oneRecord :whole_task_list){
-                            if (oneRecord.getTaskType()== JobBase.TaskType.CHECK && oneRecord.getExecutorID()==user_id){
+//                            if (oneRecord.getTaskType()== JobBase.TaskType.CHECK && oneRecord.getExecutorID()==user_id){
+                            if (oneRecord.getTaskType()== JobBase.TaskType.CHECK && oneRecord.getExecutorID().equals(user_id)){
                                 if(triple.getProperty().equals(oneRecord.getPropertyName())){
                                     if(null == triple.getAcceptanceRes()){
                                         oneRecord.setOpType(JobBase.OpType.UNDEFINED);
@@ -186,7 +198,8 @@ public class CheckService {
                         }
                     }
                 }
-                res = true;
+                res.setCode(1);
+//                res = true;
                 break;
             case "entity":
                 for(HashMap map:data){
@@ -212,27 +225,110 @@ public class CheckService {
                         }
                     }
                 }
-                res = true;
+//                res = true;
+                res.setCode(1);
                 break;
             default:
-                return false;
+                res.setCode(0);
+                return res;
+//                return false;
         }
         // 将状态信息反馈给任务管理器, 保存信息
         for(JobBase.ParticipantInfo pInfo :job.getJoinedCheckers()){
-            if(pInfo.getUserId() == user_id){
+            if(pInfo.getUserId().equals(user_id)){
+//                if(pInfo.getUserId() == user_id){
                 pInfo.setCurrentPage(currentPage);
                 pInfo.addTimeUsed(reviewSpan);
                 pInfo.FinishParticipantJob();
             }
         }
-        job.TryToFinishCheckPhase();
 
+//        job.TryToFinishCheckPhase();
+        boolean flag = job.TryToFinishCheckPhase();
         JobFactory.saveAJobByJobID(job_id,job);
+
+        if(flag){
+            System.out.println("验收任务完成，给验收者发放荣誉值");
+            res.setCode(2);
+            // 这里表示job finished，接口逻辑判断写在这里
+
+            // 1. 拿到每个checker和reviewer的user_id以及对应的data_id
+            Map<String, List> honor_info = new HashMap<>();
+            Map<String, String> map_temp = new HashMap<>();
+            Set<String> entid_set = new HashSet<String>();
+
+            // List<HashMap> data 是job的数据
+            switch (type){
+
+                case "triple":
+                    for(HashMap map:data){
+                        String jsonStr = Singleton.GSON.toJson(map);
+                        Subject subject = Singleton.GSON.fromJson(jsonStr,Subject.class);
+                        for(Triple triple:subject.getTriples()){
+                            //ReviewFactory.saveRelationHistory(new TripleHistory(user_id,job_id,triple.getTripleId(),triple.getReviewedRes()));
+                            for(JobBase.TaskRecord oneRecord :whole_task_list){
+//                                System.out.println("\t triple.getTripleId: " + triple.getTripleId());
+//                                System.out.println("\t TaskType " + oneRecord.getTaskType());
+//                                System.out.println("\t oneRecord.getExecutorID  " + oneRecord.getExecutorID());
+                                String executor_id = oneRecord.getExecutorID();
+                                // 97c9eff7ca1646689b4ccec86adc2a25_family, 获得entity id
+                                String entid = (triple.getTripleId().split("_"))[0];
+                                entid_set.add(entid);
+
+                                map_temp.clear();
+                                map_temp.put("dataId", entid);
+                                map_temp.put("version", "");
+                                // 统计check的数量信息
+                                if(honor_info.containsKey(executor_id)){
+                                    // 已经有这个id
+                                    honor_info.get(executor_id).add(map_temp);
+                                }
+                                else{
+                                    // 这个id还没有
+                                    List<Object> new_list = new ArrayList<>();
+                                    new_list.add(map_temp);
+                                    honor_info.put(executor_id, new_list);
+                                }
+                            }
+                        }
+                    }
+            }
+
+//            System.out.println("123 \t " + honor_info);
+
+            // 2. 调用上链的接口， string: user_id, string: [data_id list]
+            // 参数是 Map<String, List<String>>: honor_info
+
+            // 3. 从entity里面entid_set对应的document，存储到checked_entity里面去。
+            Document oneDocument;
+
+            for(String entity_id: entid_set){
+                // 从"entity"查询得到id的one_document, 得到data_doc_list
+                Document match_first = new Document();
+                match_first.put("@id",entity_id);
+                MongoCursor<Document> cursor_first = entityCollection.find(match_first).iterator();
+                if (cursor_first.hasNext()){
+                    oneDocument = cursor_first.next();
+                    Document match_second = new Document();
+                    //one_document再存入"checked_entity"
+                    match_second.put("@id",entity_id);
+                    MongoCursor<Document> cursor_second = checkedEntityCOLLECTION.find(match_second).iterator();
+                    // 去重复, 如果找不到该entity_id
+                    if (false == cursor_second.hasNext()){
+                        checkedEntityCOLLECTION.insertOne(oneDocument);
+                    }
+
+                }
+            }
+            res.setData(honor_info);
+
+        }
         return res;
     }
 
     //验收任务继续
     public Map continueTask(String user_id, String jobId) {
+        System.out.println("\t continueTask");
         JobBase jobBase = JobFactory.getJobByJobId(jobId);
         if(jobBase == null){
             return null;
@@ -271,6 +367,7 @@ public class CheckService {
 
     //获取审核记录信息
     public Map getState(String user_id,String jobDomain) {
+        System.out.println("\t getState");
         Map map = new HashMap<String, String>();
         int reviewedEntityNum = 0;
         int reviewedTripleNum = 0;

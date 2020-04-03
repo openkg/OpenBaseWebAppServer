@@ -71,7 +71,8 @@ public class JobFactory {
         //匹配uid的document
         Document match = new Document();
         match.put("joinedReviewers.uid",uId);
-        match.put("jobDomain",jobDomain);
+        // 去掉domain
+//        match.put("jobDomain",jobDomain);
 
         MongoCursor<Document> mongoCursor = jobCollection.find(match).iterator();
         while (mongoCursor.hasNext()){
@@ -101,20 +102,23 @@ public class JobFactory {
 
     //领取审核任务
     public static JobBase getReviewJob(String uid,String source){
+        System.out.println("\t\t getReviewJob");
         JobBase tmp = new JobBase();
         ParticipantInfo participantInfo = tmp.new ParticipantInfo(uid);
         Document participantDocument = Document.parse(participantInfo.toString());
         participantDocument.put("startTime",sdf.format(new Date()));
 
         Document match = new Document();
+        // leftReviewerCount大于0，可以进行审核的
         match.put("leftReviewerCount",new Document("$gt",0));
+        // 该uid之前没有审核过这个任务
         match.put("joinedReviewers.uid",new Document("$ne",uid));
-        match.put("jobDomain",source);
+        // 去掉jobDomain，不局限在kg4ai
+//        match.put("jobDomain",source);
 
         Document update = new Document();
         update.put("$inc",new Document("leftReviewerCount",-1));
         update.put("$push",new Document("joinedReviewers",participantDocument));
-
 
         FindOneAndUpdateOptions options = new FindOneAndUpdateOptions();
         Document sort = new Document("leftReviewerCount",1);
@@ -123,17 +127,24 @@ public class JobFactory {
 
         Document res = jobCollection.findOneAndUpdate(match,update,options);
         if (res == null||res.isEmpty()){
+            System.out.println("\t\t 找不到之前的任务，生成新的审核任务");
             JobBase jobBase = generateANewReviewjob(uid, source);
             return jobBase;
         }
-
+        System.out.println("\t\t 存在审核任务");
         JobBase jobBase = Singleton.GSON.fromJson(res.toJson(),JobBase.class);
         return jobBase;
     }
 
     public static List<JobBase.TaskRecord> assignNewTaskRecordsForUserId(JobBase initialJob, String user_id){
-        MongoCursor<Document> triple_cursor = entityCollection.aggregate(Arrays.asList(new Document("$match", new Document("@domain","kg4ai")),new Document("$sample", new Document("size",300)))).iterator();
-        MongoCursor<Document> entity_cursor = entityCollection.aggregate(Arrays.asList(new Document("$match", new Document("@domain","kg4ai")),new Document("$sample", new Document("size",200)))).iterator();
+//        MongoCursor<Document> triple_cursor = entityCollection.aggregate(Arrays.asList(new Document("$match", new Document("@domain","kg4ai")),new Document("$sample", new Document("size",300)))).iterator();
+//        MongoCursor<Document> entity_cursor = entityCollection.aggregate(Arrays.asList(new Document("$match", new Document("@domain","kg4ai")),new Document("$sample", new Document("size",200)))).iterator();
+        System.out.println("\t\t assignNewTaskRecordsForUserId");
+        // 先随机sample 2个
+        MongoCursor<Document> triple_cursor = entityCollection.aggregate(Arrays.asList(new Document("$sample", new Document("size",2)))).iterator();
+//        MongoCursor<Document> entity_cursor = entityCollection.aggregate(Arrays.asList(new Document("$sample", new Document("size",200)))).iterator();
+
+
         List<JobBase.TaskRecord> initialTripleRecords = new ArrayList<JobBase.TaskRecord>();
         List<JobBase.TaskRecord> initialEntityRecords = new ArrayList<JobBase.TaskRecord>();
         //initialJob.joinNewReviewer(user_id);
@@ -148,8 +159,9 @@ public class JobFactory {
         }finally {
             triple_cursor.close();
         }
-        List<JobBase.TaskRecord> subInitialTripleRecords = initialTripleRecords.subList(0, min(initialTripleRecords.size(), 200));
-        List<JobBase.TaskRecord> subInitialEntityRecords = initialEntityRecords.subList(0, min(initialEntityRecords.size(), 200));
+        // 都是最少取200个，修改成5个
+        List<JobBase.TaskRecord> subInitialTripleRecords = initialTripleRecords.subList(0, min(initialTripleRecords.size(), 5));
+        List<JobBase.TaskRecord> subInitialEntityRecords = initialEntityRecords.subList(0, min(initialEntityRecords.size(), 5));
         if (initialJob.getType() == JobBase.JobType.TRIPLE){
             initialJob.appendJobHistory(subInitialTripleRecords);
         }else{
@@ -166,6 +178,8 @@ public class JobFactory {
     }
 
     public static boolean saveJobBase(JobBase jobToSave){
+        System.out.println("\t\t saveJobBase");
+
         Document match = new Document();
         match.put("jobUUID", jobToSave.getJobUUID());
 
@@ -180,16 +194,29 @@ public class JobFactory {
     }
 
     public static JobBase generateANewReviewjob(String user_id, String jobDomain){
-        MongoCursor<Document> triple_cursor = entityCollection.aggregate(Arrays.asList(new Document("$match", new Document("@domain",jobDomain)),new Document("$sample", new Document("size",300)))).iterator();
-        MongoCursor<Document> entity_cursor = entityCollection.aggregate(Arrays.asList(new Document("$match", new Document("@domain",jobDomain)),new Document("$sample", new Document("size",200)))).iterator();
+        System.out.println("\t\t generateANewReviewjob");
+//        MongoCursor<Document> triple_cursor = entityCollection.aggregate(Arrays.asList(new Document("$match",
+//                new Document("@domain",jobDomain)),new Document("$sample", new Document("size",300)))).iterator();
+//        MongoCursor<Document> entity_cursor = entityCollection.aggregate(Arrays.asList(new Document("$match",
+//                new Document("@domain",jobDomain)),new Document("$sample", new Document("size",200)))).iterator();
+
+        // 先随机sample 2个
+        MongoCursor<Document> triple_cursor = entityCollection.aggregate(Arrays.asList(new Document("$sample",
+                new Document("size",2)))).iterator();
+//        MongoCursor<Document> entity_cursor = entityCollection.aggregate(Arrays.asList(new Document("$sample",
+//                new Document("size",200)))).iterator();
 
         JobBase.JobType chosenTye;
-        if(flip() == Coin.Heads){
-           chosenTye =  JobBase.JobType.TRIPLE;
-        }else{
-            chosenTye = JobBase.JobType.ENTITY;
-        }
-        JobBase resultJobBase  = new JobBase(chosenTye, 3, 1, jobDomain);
+        // 不要扔硬币了，新冠的数据没有"summary"这个key，所以不存在entity的审核。
+//        if(flip() == Coin.Heads){
+//           chosenTye =  JobBase.JobType.TRIPLE;
+//        }else{
+//            chosenTye = JobBase.JobType.ENTITY;
+//        }
+        chosenTye =  JobBase.JobType.TRIPLE;
+
+        // 便于测试，reviewerCount设置为1
+        JobBase resultJobBase  = new JobBase(chosenTye, 2, 1, jobDomain);
         resultJobBase.generateUUID();
         List<JobBase.TaskRecord> initialTripleRecords = new ArrayList<JobBase.TaskRecord>();
         List<JobBase.TaskRecord> initialEntityRecords = new ArrayList<JobBase.TaskRecord>();
@@ -197,24 +224,30 @@ public class JobFactory {
         try{
             while (triple_cursor.hasNext()){
                 Document oneDocument = triple_cursor.next();
+                // 生成三元组的数据
                 initialTripleRecords.addAll(resultJobBase.parseToTripleTaskRecord(oneDocument, user_id));
                 if (null != (List<Document>)oneDocument.get("summary")) {
+                    // 生成实体的数据
                     initialEntityRecords.add(resultJobBase.parseToEntityTaskRecord(oneDocument, user_id));
                 }
             }
         }finally {
             triple_cursor.close();
         }
-        List<JobBase.TaskRecord> subInitialTripleRecords = initialTripleRecords.subList(0, min(initialTripleRecords.size(), 200));
-        List<JobBase.TaskRecord> subInitialEntityRecords = initialEntityRecords.subList(0, min(initialEntityRecords.size(), 200));
+        // 都是最少取200个，修改成5个
+        List<JobBase.TaskRecord> subInitialTripleRecords = initialTripleRecords.subList(0, min(initialTripleRecords.size(), 5));
+        List<JobBase.TaskRecord> subInitialEntityRecords = initialEntityRecords.subList(0, min(initialEntityRecords.size(), 5));
         if (resultJobBase.getType() == JobBase.JobType.TRIPLE){
             resultJobBase.setJobHistory(subInitialTripleRecords);
         }else{
             resultJobBase.setJobHistory(subInitialEntityRecords);
         }
+        // 存入到OpenbaseJobManage里面
         jobCollection.insertOne(Document.parse(resultJobBase.toString()));
         return resultJobBase;
     }
+
+
 
     public static String retrievePropertyValue(String entity_id, String property_name){
         String one_return_value = null;
@@ -308,6 +341,8 @@ public class JobFactory {
 
     //保存审核任务
     public static Boolean saveAJobByJobID(String jobUUID, JobBase job){
+        System.out.println("\t\t saveAJobByJobID");
+
         try {
             Document match = new Document();
             match.put("jobUUID", jobUUID);
@@ -327,6 +362,7 @@ public class JobFactory {
 
     //领取验收任务
     public static JobBase getCheckJob(String uid,String source){
+        System.out.println("\t\t getCheckJob");
         JobBase tmp = new JobBase();
         ParticipantInfo participantInfo = tmp.new ParticipantInfo(uid);
         Document participantDocument = Document.parse(participantInfo.toString());
@@ -336,7 +372,8 @@ public class JobFactory {
         match.put("leftCheckerCount",new Document("$gt",0));
         match.put("reviewPhaseFinished",true);
         match.put("joinedCheckers.uid",new Document("$ne",uid));
-        match.put("jobDomain",source);
+        // 不需要jobDomain的匹配
+//        match.put("jobDomain",source);
 
         Document update = new Document();
         update.put("$inc",new Document("leftCheckerCount",-1));

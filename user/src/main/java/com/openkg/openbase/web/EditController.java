@@ -84,12 +84,12 @@ public class EditController {
                 parameter.put("newVersion", timeStamp);
                 parameter.put("oldVersion", old_version);
                 parameter.put("userId", user_id);
-//                HttpClientService.HttpResponse response_http = httpClient.doPut("http://113.31.104.113:8080/api/v1/ont-id/data", parameter);
-//                System.out.println("put response = " + response_http.getBody());
+                HttpClientService.HttpResponse response_http = httpClient.doPut("http://113.31.104.113:8080/api/v1/ont-id/data", parameter);
+                System.out.println("put response = " + response_http.getBody());
                 // get请求得到荣誉值
-//                String get_url = "http://113.31.104.113:8080/api/v1/honor-point?userId=" + user_id;
-//                String response_str = httpClient.doGet(get_url);
-//                System.out.println("get response = " + response_str);
+                String get_url = "http://113.31.104.113:8080/api/v1/honor-point?userId=" + user_id;
+                String response_str = httpClient.doGet(get_url);
+                System.out.println("get response = " + response_str);
             }
             catch (Exception e){
                 e.printStackTrace();
@@ -149,8 +149,8 @@ public class EditController {
                 parameter.put("userId", user_id);
 
                 // post注册data_id
-//                HttpClientService.HttpResponse response_http = httpClient.doPost("http://113.31.104.113:8080/api/v1/ont-id/data", parameter);
-//                System.out.println("post response = " + response_http.getBody());
+                HttpClientService.HttpResponse response_http = httpClient.doPost("http://113.31.104.113:8080/api/v1/ont-id/data", parameter);
+                System.out.println("post response = " + response_http.getBody());
             }
             catch (Exception e){
                 e.printStackTrace();

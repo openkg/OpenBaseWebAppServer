@@ -135,6 +135,7 @@ import java.util.*;
         }
 
         public void FinishParticipantJob(){
+            System.out.println("\t\t 完成了审核/验收任务！！！！");
             this.isThisParticipantAlreadyFinishedHisJob = true;
         }
 
@@ -150,10 +151,10 @@ import java.util.*;
 
     public class TaskRecord{
         private String entityID;
-        private String propertyName;
+        private String propertyName; // Summary 或者 ...
         private String executorID;
-        private TaskType taskType;
-        private OpType opType;
+        private TaskType taskType; // REVIEW or CHECK
+        private OpType opType; // DISAPPROVE 或者 ...
         private List<String> opPropertyValues;
         private List<String> opPropertyRelations;
 
@@ -227,21 +228,27 @@ import java.util.*;
         }
     }
 
-    public void TryToFinishCheckPhase(){
+    public boolean TryToFinishCheckPhase(){
         if(leftCheckerCount <= 0){
             boolean all_checkers_done = true;
             for (ParticipantInfo pInfo :joinedCheckers){
                 if(!pInfo.isThisParticipantAlreadyFinishedHisJob){
+//                    System.out.println("\t\t false");
                     all_checkers_done = false;
                 }
             }
             if(all_checkers_done){
+//                System.out.println("\t\t 111111");
                 checkPhaseFinished = true;
             }
             if(reviewPhaseFinished && checkPhaseFinished){
+//                System.out.println("\t\t 2222222");
+                System.out.println("\t\t 完成了验收任务！！！！");
                 jobCompletelyFinished = true;
+                return true;
             }
         }
+        return false;
     }
 
     public boolean isReviewPhaseFinished(){

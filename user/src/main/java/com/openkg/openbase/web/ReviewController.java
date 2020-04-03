@@ -34,6 +34,9 @@ public class ReviewController {
     @ApiOperation(value = "getTask")
     @RequestMapping(value = "getTask", method = RequestMethod.GET)
     public Res getTask(@RequestParam("token") String token, @RequestParam("source") String source) {
+        System.out.println("controller 领取审核任务");
+        //domain控制一下
+        source = "all";
         Res res = new Res();
         if (token == null || token.equals("") || source == null || source.equals("")) {
             res.setCode(Msg.FAILED.getCode());
@@ -49,15 +52,18 @@ public class ReviewController {
         //领取任务, 返回任务数据
         Map data = reviewService.getReivewJob(Token.fromCache(token).getUser_id(),source);
         if(data==null){
+            System.out.println("暂时没有可领取的任务");
             res.setMsg("暂时没有可领取的任务");
             res.setCode(Msg.FAILED.getCode());
             return res;
         }
         if (data.size() == 0){
+            System.out.println("任务出错");
             res.setCode(Msg.FAILED.getCode());
             res.setMsg("任务出错");
             res.setToken(token);
         } else {
+            System.out.println("领取成功");
             res.setCode(Msg.SUCCESS.getCode());
             res.setMsg("领取成功");
             res.setToken(token);
@@ -73,6 +79,7 @@ public class ReviewController {
     @ApiOperation(value = "saveTask")
     @RequestMapping(value = "saveTask", method = RequestMethod.POST)
     public Res saveTask(@RequestBody Map<String,Object> map) {
+        System.out.println("controller 审核任务保存");
         String token = (String) map.get("token");
         String jobId = (String) map.get("jobId");
         Integer currentPage = (Integer) map.get("currentPage");
@@ -109,6 +116,7 @@ public class ReviewController {
     @ApiOperation(value = "continueTask")
     @RequestMapping(value = "continueTask", method = RequestMethod.GET)
     public Res continueTask(@RequestParam("token") String token, @RequestParam("jobId") String jobId) {
+        System.out.println("controller 审核任务继续");
         Res res = new Res();
         if (token == null || token.equals("")) {
             res.setCode(Msg.FAILED.getCode());
@@ -141,6 +149,7 @@ public class ReviewController {
     @ApiOperation(value = "commitTask")
     @RequestMapping(value = "commitTask", method = RequestMethod.POST)
     public Res commitTask(@RequestBody Map<String,Object> map) {
+        System.out.println("controller 审核任务提交");
         String token = (String) map.get("token");
         String jobId = (String) map.get("jobId");
         Integer currentPage = (Integer) map.get("currentPage");
@@ -177,8 +186,11 @@ public class ReviewController {
     @ApiOperation(value = "getStats")
     @RequestMapping(value = "getStats", method = RequestMethod.GET)
     public Res getState(@RequestParam("token") String token,@RequestParam("source") String source) {
+        source = "all";
+        System.out.println("controller 审核任务记录与统计");
         Res res = new Res();
         if (token == null || token.equals("")) {
+            System.out.println("请求参数错误");
             res.setCode(Msg.FAILED.getCode());
             res.setMsg("请求参数错误");
             return res;
@@ -191,11 +203,13 @@ public class ReviewController {
 
         Map map = reviewService.getState(Token.fromCache(token).getUser_id(), source);
         if (map != null) {
+            System.out.println("任务列表,统计获取成功");
             res.setCode(Msg.SUCCESS.getCode());
             res.setMsg("任务列表,统计获取成功");
             res.setToken(token);
             res.setData(map);
         } else {
+            System.out.println("获取失败");
             res.setCode(Msg.FAILED.getCode());
             res.setMsg("获取失败");
             res.setToken(token);
@@ -205,6 +219,7 @@ public class ReviewController {
     
     @RequestMapping(value = "updateAllReviewSeconds", method = RequestMethod.GET)
     public Res updateAllReviewSeconds(@RequestParam("token") String token,@RequestParam("source") String source) {
+        System.out.println("controller updateAllReviewSeconds");
         Res res = new Res();
         if (token == null || token.equals("")) {
             res.setCode(Msg.FAILED.getCode());

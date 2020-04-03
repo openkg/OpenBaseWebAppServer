@@ -25,13 +25,14 @@ public class ReviewService {
 
     //审核任务领取
     public Map getReivewJob(String user_id, String jobDomain) {
-        //获取任务id
+        System.out.println("\t getReivewJob");
+        //根据user_id, 获取job_base, 一个job
         JobBase jobBase = JobFactory.getReviewJob(user_id,jobDomain);
         if(jobBase == null){
             return null;
         }
         List<JobBase.TaskRecord> whole_task_list = new ArrayList<JobBase.TaskRecord>();
-        whole_task_list.addAll(jobBase.getRecordHistory());
+        whole_task_list.addAll(jobBase.getRecordHistory()); //返回值 List<TaskRecord>
         List<JobBase.TaskRecord> filtered_task_lilst = new ArrayList<JobBase.TaskRecord>();
         for (JobBase.TaskRecord oneTask :whole_task_list){
             if (user_id.equals(oneTask.getExecutorID()) && oneTask.getTaskType() == JobBase.TaskType.REVIEW){
@@ -60,6 +61,9 @@ public class ReviewService {
             }
             JobFactory.saveJobBase(jobBase);
         }
+
+        //这个函数是从job base生成问题的
+        //filtered_task_list是 List<JobBase.TaskRecord>类型
         List<Element> elements = ReviewFactory.getElementListFromRecordHistory(filtered_task_lilst, jobBase.getType());
 
         Map result = new HashMap<String, String>();
@@ -78,6 +82,7 @@ public class ReviewService {
 
     //保存任务
     public boolean saveTask(String user_id, String job_id, int currentPage, int reviewSpan, List<HashMap> data) {
+        System.out.println("\t saveTask");
         JobBase job = JobFactory.getJobByJobId(job_id);
         String type = job.getType().getName();
         List<JobBase.TaskRecord> whole_task_list = job.getRecordHistory();
@@ -150,6 +155,7 @@ public class ReviewService {
 
     //提交审核任务
     public boolean commitTask(String user_id, String job_id, int currentPage, int reviewSpan, List<HashMap> data) {
+        System.out.println("\t commitTask");
         JobBase job = JobFactory.getJobByJobId(job_id);
         String type = job.getType().getName();
         List<JobBase.TaskRecord> whole_task_list = job.getRecordHistory();
@@ -220,6 +226,7 @@ public class ReviewService {
 
     //继续审核
     public Map continueTask(String user_id, String jobId) {
+        System.out.println("\t continueTask");
         JobBase jobBase = JobFactory.getJobByJobId(jobId);
         if(jobBase == null){
             return null;
@@ -285,6 +292,7 @@ public class ReviewService {
 
     //获取审核记录信息
     public Map getState(String user_id, String jobDomain) {
+        System.out.println("\t getState");
         Map map = new HashMap<String, String>();
         int reviewedEntityNum = 0;
         int reviewedTripleNum = 0;

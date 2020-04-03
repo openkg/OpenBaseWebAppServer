@@ -145,12 +145,13 @@ public class ViewController {
                 parameter.put("amount", data_size);
                 parameter.put("dataId", data_id);
                 parameter.put("version", "");
-//                HttpClientService.HttpResponse response_http = httpClient.doPost("http://113.31.104.113:8080/api/v1/honor-point", parameter);
-//                System.out.println("post response = " + response_http.getBody());
+                HttpClientService.HttpResponse response_http = httpClient.doPost("http://113.31.104.113:8080/api/v1/honor-point", parameter);
+                System.out.println("post response = " + response_http.getBody());
+
                 // get请求得到荣誉值
                 String get_url = "http://113.31.104.113:8080/api/v1/honor-point?userId=" + user_id;
-//                String response_str = httpClient.doGet(get_url);
-//                System.out.println("get response = " + response_str);
+                String response_str = httpClient.doGet(get_url);
+                System.out.println("get response = " + response_str);
             }
 
         } catch (Exception e) {

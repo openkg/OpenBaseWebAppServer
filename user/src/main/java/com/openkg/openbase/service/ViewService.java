@@ -24,8 +24,8 @@ import java.util.*;
 
 
 public class ViewService {
-
-    private static final String ENTITYCOLLECTION = "entity";
+    private static final String ENTITYCOLLECTION = "checked_entity";
+//    private static final String ENTITYCOLLECTION = "entity";
     private static final MongoCollection<Document> entityCollection = Singleton.mongoDBUtil.getdb().getCollection(ENTITYCOLLECTION);
     private static final String EntitySearchRedisTableName = "EntitySearch";
     private final static Logger LOGGER = LoggerFactory.getLogger(ViewService.class);
@@ -410,7 +410,7 @@ public class ViewService {
         List<Relation> relations = new ArrayList<>();
         String centNode = null;
         String masterScholar = null;
-        System.out.println(1);
+//        System.out.println(1);
 
         if (entityAtID == null && propertyID == null) {
             EnNode curEntity = getEntityRandom(domain);
@@ -520,7 +520,8 @@ public class ViewService {
     }
 
     public static EnNode getEntityRandom(String domain) {
-        MongoCursor<Document> result_cursor =  entityCollection.aggregate(Arrays.asList(new Document("$match", new Document("@domain",domain)), new Document("$sample", new Document("size",1)))).iterator();
+//        MongoCursor<Document> result_cursor =  entityCollection.aggregate(Arrays.asList(new Document("$match", new Document("@domain",domain)), new Document("$sample", new Document("size",1)))).iterator();
+        MongoCursor<Document> result_cursor =  entityCollection.aggregate(Arrays.asList(new Document("$sample", new Document("size",1)))).iterator();
         if(result_cursor.hasNext()){
             Document oneDocument = result_cursor.next();
             String atID = oneDocument.getString("@id");
