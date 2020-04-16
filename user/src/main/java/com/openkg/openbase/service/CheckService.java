@@ -166,7 +166,6 @@ public class CheckService {
         JobBase job = JobFactory.getJobByJobId(job_id);
         String type = job.getType().getName();
         List<JobBase.TaskRecord> whole_task_list = job.getRecordHistory();
-//        Boolean res = false;
         Res res = new Res();
         switch (type){
             case "triple":
@@ -241,109 +240,74 @@ public class CheckService {
             }
         }
 
-//        job.TryToFinishCheckPhase();
         boolean flag = job.TryToFinishCheckPhase();
         JobFactory.saveAJobByJobID(job_id,job);
 
-        if(flag){
+        if(flag) {
             System.out.println("验收任务完成，给验收/审核者发放荣誉值");
             res.setCode(2);
-            // 这里表示job finished，接口逻辑判断写在这里
-
             // 1. 拿到每个checker和reviewer的user_id以及对应的data_id
-//            Map<String, List> honor_info = new HashMap<>();
-            Map<String, Map> user_object = new HashMap<>();
+            Map<String, Object> object = new HashMap<>();
             Set<String> entid_set = new HashSet<String>();
-//            Map<String, Integer> data_amount = new HashMap<>();
+            Set<String> userIds = new HashSet<String>();
+            Map<String, Integer> data_amount = new HashMap<>();
 
             // List<HashMap> data 是job的数据
-            switch (type){
+            switch (type) {
                 case "triple":
-                    for(JobBase.TaskRecord oneRecord :whole_task_list){
-//                   System.out.println("\t triple.getTripleId: " + triple.getTripleId());
-//                   System.out.println("\t TaskType " + oneRecord.getTaskType());
-//                   System.out.println("\t oneRecord.getExecutorID  " + oneRecord.getExecutorID());
+                    for (JobBase.TaskRecord oneRecord : whole_task_list) {
                         String executor_id = oneRecord.getExecutorID();
                         String entid = oneRecord.getEntityID();
 
-                        // 97c9eff7ca1646689b4ccec86adc2a25_family, 获得entity id
-//                        String entid = (triple.getTripleId().split("_"))[0];
-
-                        // 先判断有没有这个人
-                        if (user_object.containsKey(executor_id)){
-                            // 有这个人，不管他
-                        }
-                        else{
-                            // 没有这个人，创建一个
-                            Map<String, Integer> data_amount = new HashMap<>();
-                            user_object.put(executor_id, data_amount);
-                        }
-
-                        if((user_object.get(executor_id)).containsKey(entid)){
-                            // 如果这个用户，已经有这个entid了
-                            int original = (int)((user_object.get(executor_id)).get(entid));
-                            (user_object.get(executor_id)).put(entid, original + 1);
-                        }
-                        else{
-                            // 如果这个用户没有当前entid
-                            (user_object.get(executor_id)).put(entid, 1);
-                        }
-
+                        userIds.add(executor_id);
                         entid_set.add(entid);
 
-//                        map_temp.clear();
-//                        map_temp.put("dataId", entid);
-//                        map_temp.put("version", "");
-//                        // 统计check的数量信息
-//                        if(honor_info.containsKey(executor_id)){
-//                            // 已经有这个id
-//                            honor_info.get(executor_id).add(map_temp);
-//                        }
-//                        else{
-//                            // 这个id还没有
-//                            List<Object> new_list = new ArrayList<>();
-//                            new_list.add(map_temp);
-//                            honor_info.put(executor_id, new_list);
-//                        }
+                        if (data_amount.containsKey(entid) == false){
+                            data_amount.put(entid, 1);
+                        }
+                        else{
+                            int last = data_amount.get(entid);
+                            data_amount.put(entid, last + 1);
+                        }
 
                     }
-
+                    object.put("data_amount", data_amount);
+                    object.put("userid_list", userIds);
+                    res.setData(object);
+                    break;
             }
 
-//            System.out.println("123 \t " + honor_info);
+//            System.out.println("data_amount  " +data_amount);
+//            System.out.println("userid_list "+  userid_list);
 
-            // 2. string: user_id, string: [data_id list]
-            // 参数是 Map<String, List<String>>: honor_info, 作为参数传到外面的controller
-
-            // 3. 从entity里面entid_set对应的document，存储到checked_entity里面去。
+            // 从entity里面entid_set对应的document，存储到checked_entity里面去。
             Document oneDocument;
-
-            for(String entity_id: entid_set){
+            for (String entity_id : entid_set) {
                 // 从"entity"查询得到id的one_document, 得到data_doc_list
                 Document match_first = new Document();
-                match_first.put("@id",entity_id);
+                match_first.put("@id", entity_id);
                 MongoCursor<Document> cursor_first = entityCollection.find(match_first).iterator();
-                if (cursor_first.hasNext()){
+                if (cursor_first.hasNext()) {
                     oneDocument = cursor_first.next();
                     Document match_second = new Document();
                     //one_document再存入"checked_entity"
-                    match_second.put("@id",entity_id);
+                    match_second.put("@id", entity_id);
                     MongoCursor<Document> cursor_second = checkedEntityCOLLECTION.find(match_second).iterator();
                     // 去重复, 如果找不到该entity_id
-                    if (false == cursor_second.hasNext()){
+                    if (false == cursor_second.hasNext()) {
                         checkedEntityCOLLECTION.insertOne(oneDocument);
                     }
 
                 }
             }
-            res.setData(user_object);
 
         }
+
         return res;
     }
 
     //验收任务继续
-    public Map continueTask(String user_id, String jobId) {
+    public Map continueTask(String user_id, String jobId){
         System.out.println("\t continueTask");
         JobBase jobBase = JobFactory.getJobByJobId(jobId);
         if(jobBase == null){
@@ -381,8 +345,9 @@ public class CheckService {
         return result;
     }
 
+
     //获取审核记录信息
-    public Map getState(String user_id,String jobDomain) {
+    public Map getState(String user_id, String jobDomain) {
         System.out.println("\t getState");
         Map map = new HashMap<String, String>();
         int reviewedEntityNum = 0;
@@ -442,3 +407,4 @@ public class CheckService {
         return map;
     }
 }
+

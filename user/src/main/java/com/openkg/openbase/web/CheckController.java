@@ -17,9 +17,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.MediaType;
 import org.springframework.web.bind.annotation.*;
 
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 
 @Api(description = "openbase review api", tags = "acceptance api",
@@ -188,25 +186,35 @@ public class CheckController {
 
             if (res_tmp.getCode() == 2){
                 try {
-                    Map<String, Object> user_object = (Map<String, Object>)(res_tmp.getData());
-                    int amount = 0;
-                    for(String user_id : user_object.keySet()){
-                        Map<String, Integer>  data_amount = (Map<String, Integer>)(user_object.get(user_id));
+//                    {
+//                        "amount": 0,
+//                        "dataId": "string",
+//                        "userIds": [
+//                           "string"
+//                        ],
+//                        "version": "string"
+//                    }
+                    Map<String, Object> object = (Map<String, Object>)(res_tmp.getData());
+                    Map<String, Integer> data_amount = (Map<String, Integer>)(object.get("data_amount"));
+                    Set<String> userIds_set =  (Set<String>)(object.get("userid_list"));
+                    List<String> userIds=new ArrayList<>(userIds_set);
+
+                    for(String dataId : data_amount.keySet()){
                         System.out.println();
-                        System.out.println("审核--验收: user_id = " + user_id);
 
-                        for (String data_id : data_amount.keySet()) {
-                            System.out.println("data_id: " + data_id);
-                            System.out.println("amount: " + data_amount.get(data_id));
-                            Map<String, Object> parameter = new HashMap<>();
+                        System.out.println("审核--验收: data_id: " + dataId);
+                        System.out.println("userIds: " + userIds);
+                        System.out.println("amount: " + data_amount.get(dataId));
 
-                            parameter.put("amount", data_amount.get(data_id));
-                            parameter.put("userId", user_id);
-                            parameter.put("dataId", data_id);
-                            parameter.put("version", "");
-                            HttpClientService.HttpResponse response_http = httpClient.doPost("http://113.31.104.113:8080/api/v1/honor-point", parameter);
-                            System.out.println("post response = " + response_http.getBody());
-                        }
+                        Map<String, Object> parameter = new HashMap<>();
+
+                        parameter.put("amount", data_amount.get(dataId));
+                        parameter.put("userIds", userIds);
+                        parameter.put("dataId", dataId);
+                        parameter.put("version", "");
+                        HttpClientService.HttpResponse response_http = httpClient.doPost("http://113.31.104.113:8080/api/v1/honor-point/auditor", parameter);
+                        System.out.println("post response = " + response_http.getBody());
+
                     }
                 }
                 catch (Exception e) {
