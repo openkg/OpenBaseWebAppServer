@@ -40,7 +40,7 @@ public class ReviewService {
             }
         }
         if(filtered_task_lilst.isEmpty()){
-            filtered_task_lilst = JobFactory.assignNewTaskRecordsForUserId(jobBase, user_id);
+//            filtered_task_lilst = JobFactory.assignNewTaskRecordsForUserId(jobBase, user_id);
             String someone_user_id = null;
             for(JobBase.TaskRecord oneTask:whole_task_list){
                 if (oneTask.getTaskType() == JobBase.TaskType.REVIEW){

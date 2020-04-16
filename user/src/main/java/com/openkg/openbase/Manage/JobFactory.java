@@ -247,8 +247,6 @@ public class JobFactory {
         return resultJobBase;
     }
 
-
-
     public static String retrievePropertyValue(String entity_id, String property_name){
         String one_return_value = null;
         Document oneDocument;
@@ -296,6 +294,7 @@ public class JobFactory {
 
         return one_return_value;
     }
+
     public static String retrieveAtNameValue(String entity_id){
         // 当前对于多值的property只取其中的第一个 !!
         Document match = new Document();
@@ -358,7 +357,6 @@ public class JobFactory {
             return false;
         }
     }
-
 
     //领取验收任务
     public static JobBase getCheckJob(String uid,String source){

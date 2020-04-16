@@ -95,7 +95,7 @@ public class CheckService {
                     for(Triple triple:subject.getTriples()){
                         //ReviewFactory.saveRelationHistory(new TripleHistory(user_id,job_id,triple.getTripleId(),triple.getReviewedRes()));
                         for(JobBase.TaskRecord oneRecord :whole_task_list){
-                            if (oneRecord.getTaskType()== JobBase.TaskType.CHECK && oneRecord.getExecutorID()==user_id){
+                            if (oneRecord.getTaskType()== JobBase.TaskType.CHECK && user_id.equals(oneRecord.getExecutorID())){
                                 if(triple.getProperty().equals(oneRecord.getPropertyName())){
                                     if(null == triple.getAcceptanceRes()){
                                         oneRecord.setOpType(JobBase.OpType.UNDEFINED);
@@ -176,7 +176,6 @@ public class CheckService {
                     for(Triple triple:subject.getTriples()){
                         //ReviewFactory.saveRelationHistory(new TripleHistory(user_id,job_id,triple.getTripleId(),triple.getReviewedRes()));
                         for(JobBase.TaskRecord oneRecord :whole_task_list){
-//                            if (oneRecord.getTaskType()== JobBase.TaskType.CHECK && oneRecord.getExecutorID()==user_id){
                             if (oneRecord.getTaskType()== JobBase.TaskType.CHECK && oneRecord.getExecutorID().equals(user_id)){
                                 if(triple.getProperty().equals(oneRecord.getPropertyName())){
                                     if(null == triple.getAcceptanceRes()){
@@ -207,7 +206,7 @@ public class CheckService {
                     Subject subject = Singleton.GSON.fromJson(jsonStr,Subject.class);
                     //ReviewFactory.saveEntityHistory(new EntityHistory(user_id,job_id,subject.getSubjectId(),subject.getReviewedRes()));
                     for(JobBase.TaskRecord oneRecord :whole_task_list){
-                        if (oneRecord.getTaskType()== JobBase.TaskType.CHECK && oneRecord.getExecutorID()==user_id){
+                        if (oneRecord.getTaskType()== JobBase.TaskType.CHECK && user_id.equals(oneRecord.getExecutorID())){
                             if (null == subject.getAcceptanceRes()){
                                 oneRecord.setOpType(JobBase.OpType.UNDEFINED);
                             }else{
@@ -236,7 +235,6 @@ public class CheckService {
         // 将状态信息反馈给任务管理器, 保存信息
         for(JobBase.ParticipantInfo pInfo :job.getJoinedCheckers()){
             if(pInfo.getUserId().equals(user_id)){
-//                if(pInfo.getUserId() == user_id){
                 pInfo.setCurrentPage(currentPage);
                 pInfo.addTimeUsed(reviewSpan);
                 pInfo.FinishParticipantJob();
@@ -248,56 +246,74 @@ public class CheckService {
         JobFactory.saveAJobByJobID(job_id,job);
 
         if(flag){
-            System.out.println("验收任务完成，给验收者发放荣誉值");
+            System.out.println("验收任务完成，给验收/审核者发放荣誉值");
             res.setCode(2);
             // 这里表示job finished，接口逻辑判断写在这里
 
             // 1. 拿到每个checker和reviewer的user_id以及对应的data_id
-            Map<String, List> honor_info = new HashMap<>();
-            Map<String, String> map_temp = new HashMap<>();
+//            Map<String, List> honor_info = new HashMap<>();
+            Map<String, Map> user_object = new HashMap<>();
             Set<String> entid_set = new HashSet<String>();
+//            Map<String, Integer> data_amount = new HashMap<>();
 
             // List<HashMap> data 是job的数据
             switch (type){
-
                 case "triple":
-                    for(HashMap map:data){
-                        String jsonStr = Singleton.GSON.toJson(map);
-                        Subject subject = Singleton.GSON.fromJson(jsonStr,Subject.class);
-                        for(Triple triple:subject.getTriples()){
-                            //ReviewFactory.saveRelationHistory(new TripleHistory(user_id,job_id,triple.getTripleId(),triple.getReviewedRes()));
-                            for(JobBase.TaskRecord oneRecord :whole_task_list){
-//                                System.out.println("\t triple.getTripleId: " + triple.getTripleId());
-//                                System.out.println("\t TaskType " + oneRecord.getTaskType());
-//                                System.out.println("\t oneRecord.getExecutorID  " + oneRecord.getExecutorID());
-                                String executor_id = oneRecord.getExecutorID();
-                                // 97c9eff7ca1646689b4ccec86adc2a25_family, 获得entity id
-                                String entid = (triple.getTripleId().split("_"))[0];
-                                entid_set.add(entid);
+                    for(JobBase.TaskRecord oneRecord :whole_task_list){
+//                   System.out.println("\t triple.getTripleId: " + triple.getTripleId());
+//                   System.out.println("\t TaskType " + oneRecord.getTaskType());
+//                   System.out.println("\t oneRecord.getExecutorID  " + oneRecord.getExecutorID());
+                        String executor_id = oneRecord.getExecutorID();
+                        String entid = oneRecord.getEntityID();
 
-                                map_temp.clear();
-                                map_temp.put("dataId", entid);
-                                map_temp.put("version", "");
-                                // 统计check的数量信息
-                                if(honor_info.containsKey(executor_id)){
-                                    // 已经有这个id
-                                    honor_info.get(executor_id).add(map_temp);
-                                }
-                                else{
-                                    // 这个id还没有
-                                    List<Object> new_list = new ArrayList<>();
-                                    new_list.add(map_temp);
-                                    honor_info.put(executor_id, new_list);
-                                }
-                            }
+                        // 97c9eff7ca1646689b4ccec86adc2a25_family, 获得entity id
+//                        String entid = (triple.getTripleId().split("_"))[0];
+
+                        // 先判断有没有这个人
+                        if (user_object.containsKey(executor_id)){
+                            // 有这个人，不管他
                         }
+                        else{
+                            // 没有这个人，创建一个
+                            Map<String, Integer> data_amount = new HashMap<>();
+                            user_object.put(executor_id, data_amount);
+                        }
+
+                        if((user_object.get(executor_id)).containsKey(entid)){
+                            // 如果这个用户，已经有这个entid了
+                            int original = (int)((user_object.get(executor_id)).get(entid));
+                            (user_object.get(executor_id)).put(entid, original + 1);
+                        }
+                        else{
+                            // 如果这个用户没有当前entid
+                            (user_object.get(executor_id)).put(entid, 1);
+                        }
+
+                        entid_set.add(entid);
+
+//                        map_temp.clear();
+//                        map_temp.put("dataId", entid);
+//                        map_temp.put("version", "");
+//                        // 统计check的数量信息
+//                        if(honor_info.containsKey(executor_id)){
+//                            // 已经有这个id
+//                            honor_info.get(executor_id).add(map_temp);
+//                        }
+//                        else{
+//                            // 这个id还没有
+//                            List<Object> new_list = new ArrayList<>();
+//                            new_list.add(map_temp);
+//                            honor_info.put(executor_id, new_list);
+//                        }
+
                     }
+
             }
 
 //            System.out.println("123 \t " + honor_info);
 
-            // 2. 调用上链的接口， string: user_id, string: [data_id list]
-            // 参数是 Map<String, List<String>>: honor_info
+            // 2. string: user_id, string: [data_id list]
+            // 参数是 Map<String, List<String>>: honor_info, 作为参数传到外面的controller
 
             // 3. 从entity里面entid_set对应的document，存储到checked_entity里面去。
             Document oneDocument;
@@ -320,7 +336,7 @@ public class CheckService {
 
                 }
             }
-            res.setData(honor_info);
+            res.setData(user_object);
 
         }
         return res;
